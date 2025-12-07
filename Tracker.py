@@ -17,14 +17,34 @@ class Tracker:
             print(f"{self.name} is eligible for Final ({p}%)")
         else:
             print(f"{self.name} is NOT eligible for Final ({p}%)")
-
     def update_attendance(self, new_p):
         self.present = new_p
         print(f"\nAttendance updated for {self.name} to {new_p}")
     @staticmethod
-    def verify_student():
-        """Returns student object if verified, else None."""
+    def update_multiple_attendance():
+        print("\n--- MULTIPLE ATTENDANCE UPDATE ---")
+        try:
+            count = int(input("How many students do you want to update? : "))
+        except ValueError:
+            print("Invalid number!")
+            return
 
+        for _ in range(count):
+            print("\nUpdating next student...")
+            s = Tracker.verify_student()
+            if s == "logout":
+                return
+            if s:
+                try:
+                    new_p = int(input(f"Enter new attendance for {s.name}: "))
+                    s.update_attendance(new_p)
+                except ValueError:
+                    print("Invalid attendance!")
+
+        print("\n[All attendance updated successfully!]\n")
+
+    @staticmethod
+    def verify_student():
         name = input("Enter student name : ").lower()
 
         if name not in students_data:
@@ -42,14 +62,12 @@ class Tracker:
 
             if sid == students_data[name].id:
                 return students_data[name]
-
             else:
                 attempts -= 1
                 print(f"Incorrect ID! Attempts left: {attempts}")
 
-        print("Too many wrong attempts → Logging out!")
+        print("Too many wrong attempts - Logging out!")
         return "logout"
-
     
     @classmethod
     def update_total(cls, new_total):
@@ -65,12 +83,10 @@ class Tracker:
             print(f"Student '{name}' removed successfully.")
         else:
             print("Student not found.")
-            
 
 
-students_data = { "akshat": { "present": 9, "id": 123 }}
 
-
+students_data = {}
 
 def admin_menu():
     while True:
@@ -90,7 +106,7 @@ def admin_menu():
             print("Enter a valid number!")
             continue
 
-        if m == 1:  
+        if m == 1:
             s = Tracker.verify_student()
             if s == "logout": return
             if s: s.attend()
@@ -112,19 +128,18 @@ def admin_menu():
             print("Students added!")
 
         elif m == 5:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s:
-                new_p = int(input("Enter new attendance : "))
-                s.update_attendance(new_p)
+            Tracker.update_multiple_attendance()
 
         elif m == 6:
             Tracker.remove_student()
 
         elif m == 7:
             print("\n--- STORED STUDENT DATA ---")
-            for s in students_data.values():
-                print(f"Name: {s.name}, ID: {s.id}, Present: {s.present}")
+            if len(students_data) == 0:
+                print("No students found")
+            else:
+                for s in students_data.values():
+                    print(f"Name: {s.name}, ID: {s.id}, Present: {s.present}")
 
         elif m == 8:
             print("Logging out as Admin!")
@@ -142,7 +157,7 @@ def teacher_menu():
 1 → Check Attendance
 2 → Check Eligibility
 3 → Update Total Classes
-4 → Update Attendance
+4 → Update Multiple Attendance
 5 → Show Student Data
 6 → Quit
 → '''))
@@ -165,11 +180,7 @@ def teacher_menu():
             Tracker.update_total(new_total)
 
         elif m == 4:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s:
-                new_p = int(input("Enter new attendance : "))
-                s.update_attendance(new_p)
+            Tracker.update_multiple_attendance()
 
         elif m == 5:
             print("\n--- STORED STUDENT DATA ---")
@@ -207,6 +218,7 @@ def student_menu():
         elif m == 3:
             print("Logging out as Student")
             break
+
 
 attempts = 3
 
