@@ -20,9 +20,11 @@ class Tracker:
             print(f"{self.name} is eligible for Final ({p}%)")
         else:
             print(f"{self.name} is NOT eligible for Final ({p}%)")
+            
     def update_attendance(self, new_p):
         self.present = new_p
         print(f"\nAttendance updated for {self.name} to {new_p}")
+        
     @staticmethod
     def update_multiple_attendance():
         print("\n--- MULTIPLE ATTENDANCE UPDATE ---")
