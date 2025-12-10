@@ -90,8 +90,58 @@ class Tracker:
             print("Student not found.")
 
 
+DATA_FILE = "students_data.json"
+
+def save_data():
+
+    data = {
+        "total": Tracker.total,
+        "students": []
+    }
+    for s in students_data.values():
+        data["students"].append({
+            "name": s.name,
+            "present": s.present,
+            "id": s.id
+        })
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+def load_data():
+
+    if not os.path.exists(DATA_FILE):
+        return
+
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        print("Warning: JSON file is corrupted. Starting with empty data.")
+        return
+
+
+    if "total" in data:
+        Tracker.total = data["total"]
+
+
+    students_data.clear()
+    for item in data.get("students", []):
+
+        t = Tracker.__new__(Tracker)
+        t.name = item["name"]
+        t.present = item["present"]
+        t.id = item["id"]
+        students_data[t.name] = t
+
+
 
 students_data = {}
+
+# Load data at program start  # JSON PART - NEW
+load_data()
+
 
 def admin_menu():
     while True:
@@ -124,6 +174,7 @@ def admin_menu():
         elif m == 3:
             new_total = int(input("Enter new total classes : "))
             Tracker.update_total(new_total)
+            save_data()   # JSON PART - NEW
 
         elif m == 4:
             num = int(input("How many students to add : "))
@@ -131,12 +182,15 @@ def admin_menu():
                 s = Tracker()
                 students_data[s.name] = s
             print("Students added!")
+            save_data()   # JSON PART - NEW
 
         elif m == 5:
             Tracker.update_multiple_attendance()
+            save_data()   # JSON PART - NEW
 
         elif m == 6:
             Tracker.remove_student()
+            save_data()   # JSON PART - NEW
 
         elif m == 7:
             print("\n--- STORED STUDENT DATA ---")
@@ -183,9 +237,11 @@ def teacher_menu():
         elif m == 3:
             new_total = int(input("Enter new total classes : "))
             Tracker.update_total(new_total)
+            save_data()   # JSON PART - NEW
 
         elif m == 4:
             Tracker.update_multiple_attendance()
+            save_data()   # JSON PART - NEW
 
         elif m == 5:
             print("\n--- STORED STUDENT DATA ---")
