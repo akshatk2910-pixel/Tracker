@@ -1,5 +1,5 @@
 {
-    "total": 20,
+    "total": 10,
     "students": [
         {
             "name": "akshat",
@@ -8,23 +8,18 @@
         },
         {
             "name": "sanchay",
-            "present": 5,
+            "present": 9,
             "id": 11
-        },
-        {
-            "name": "shivansh",
-            "present": 8,
-            "id": 12
         },
         {
             "name": "ishitve",
             "present": 8,
-            "id": 13
+            "id": 12
         },
         {
-            "name": "anna",
-            "present": 20,
-            "id": 14
+            "name": "khushwant",
+            "present": 7,
+            "id": 13
         }
     ]
 }

@@ -15,7 +15,7 @@ class Tracker:
 
     def attend(self):
         p = round((self.present / Tracker.total) * 100)
-        print(f"\n{timestamp()} Attendance → {self.name}: {self.present}/{Tracker.total} ({p}%)")
+        print(f"\n{timestamp()} Attendance - {self.name}: {self.present}/{Tracker.total} ({p}%)")
 
     def status(self):
         p = round((self.present / Tracker.total) * 100)
@@ -81,7 +81,7 @@ class Tracker:
     @classmethod
     def update_total(cls, new_total):
         cls.total = new_total
-        print(f"\n{timestamp()} Total working days updated → {new_total}")
+        print(f"\n{timestamp()} Total working days updated - {new_total}")
 
     @staticmethod
     def remove_student():
@@ -95,9 +95,13 @@ class Tracker:
 
 
 
-DATA_FILE = "students_data.json"
+
+
+students_data = {}
+DATA_FILE = ""
 
 def save_data():
+    global DATA_FILE
 
     data = {
         "total": Tracker.total,
@@ -115,21 +119,18 @@ def save_data():
 
 
 def load_data():
+    global DATA_FILE, students_data
 
     if not os.path.exists(DATA_FILE):
-        return "empty "
-
+        return "No Data file"
 
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
-    
 
-    if "total" in data:
-        Tracker.total = data["total"]
+    Tracker.total = data.get("total", 10)
 
     students_data.clear()
     for item in data.get("students", []):
-
         t = Tracker.__new__(Tracker)
         t.name = item["name"]
         t.present = item["present"]
@@ -137,9 +138,39 @@ def load_data():
         students_data[t.name] = t
 
 
+def select_subject():
+    global DATA_FILE
 
-students_data = {}
-load_data()
+    choice = input('''\nSelect Subject:
+1 - math
+2 - python
+3 - webd
+4 - logout
+- ''').lower()
+
+    if choice in ["1", "math"]:
+        DATA_FILE = "math_data.json"
+        load_data()
+        return "math"
+
+    elif choice in ["2", "python"]:
+        DATA_FILE = "python_data.json"
+        load_data()
+        return "python"
+
+    elif choice in ["3", "webd"]:
+        DATA_FILE = "webd_data.json"
+        load_data()
+        return "webd"
+
+    elif choice in ["4", "logout", "exit"]:
+        return "logout"
+
+    else:
+        print("Invalid subject")
+        return None
+
+
 
 
 def admin_menu():
@@ -147,15 +178,15 @@ def admin_menu():
         try:
             m = int(input('''
 --- ADMIN MENU ---
-1 → Check Attendance
-2 → Check Eligibility
-3 → Update Total Classes
-4 → Add Students
-5 → Update Attendance
-6 → Remove Student
-7 → Show Student Data
-8 → Quit
-→ '''))
+1 - Check Attendance
+2 - Check Eligibility
+3 - Update Total Classes
+4 - Add Students
+5 - Update Attendance 
+6 - Remove Student
+7 - Show Student Data
+8 - Quit (Back to Subject Select)
+- '''))
         except ValueError:
             print("Enter a valid number!")
             continue
@@ -177,9 +208,11 @@ def admin_menu():
 
         elif m == 4:
             num = int(input("How many students to add : "))
+            print()
             for _ in range(num):
                 s = Tracker()
                 students_data[s.name] = s
+                print()
             print(f"{timestamp()} Students added!")
             save_data()
 
@@ -200,7 +233,6 @@ def admin_menu():
                     print(f"{timestamp()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
 
         elif m == 8:
-            print("Logging out as Admin!")
             break
 
         else:
@@ -212,13 +244,13 @@ def teacher_menu():
         try:
             m = int(input('''
 --- TEACHER MENU ---
-1 → Check Attendance
-2 → Check Eligibility
-3 → Update Total Classes
-4 → Update Multiple Attendance
-5 → Show Student Data
-6 → Quit
-→ '''))
+1 - Check Attendance
+2 - Check Eligibility
+3 - Update Total Classes
+4 - Update Attendance
+5 - Show Student Data
+6 - Quit (Back to Subject Select)
+- '''))
         except ValueError:
             print("Enter a valid number!")
             continue
@@ -248,7 +280,6 @@ def teacher_menu():
                 print(f"{timestamp()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
 
         elif m == 6:
-            print("Logging out as Teacher")
             break
 
 
@@ -257,10 +288,10 @@ def student_menu():
         try:
             m = int(input('''
 --- STUDENT MENU ---
-1 → Check Attendance
-2 → Check Eligibility
-3 → Quit
-→ '''))
+1 - Check Attendance
+2 - Check Eligibility
+3 - Quit (Back to Subject Select)
+- '''))
         except ValueError:
             print("Enter a valid number")
             continue
@@ -276,8 +307,9 @@ def student_menu():
             if s: s.status()
 
         elif m == 3:
-            print("Logging out as Student")
             break
+
+
 
 
 attempts = 3
@@ -288,10 +320,22 @@ while attempts > 0:
     if o == "admin":
         while attempts > 0:
             k = input("Enter login key : ")
-            if k == '27092006':
+            if k == '12345':
                 print(f"\n{timestamp()} Admin Access Granted")
-                admin_menu()
+
+                # subject + menu loop
+                while True:
+                    subject = select_subject()
+
+                    if subject == "logout":
+                        print("Logging out...\n")
+                        break
+
+                    elif subject:
+                        admin_menu()
+
                 break
+
             else:
                 attempts -= 1
                 print(f"Invalid login. Attempts left: {attempts}")
@@ -299,10 +343,21 @@ while attempts > 0:
     elif o == "teacher":
         while attempts > 0:
             k = input("Enter login key : ")
-            if k == '12345':
+            if k == '1234':
                 print(f"\n{timestamp()} Teacher Access Granted")
-                teacher_menu()
+
+                while True:
+                    subject = select_subject()
+
+                    if subject == "logout":
+                        print("Logging out...\n")
+                        break
+
+                    elif subject:
+                        teacher_menu()
+
                 break
+
             else:
                 attempts -= 1
                 print(f"Invalid login. Attempts left: {attempts}")
@@ -312,8 +367,19 @@ while attempts > 0:
             k = input("Enter login key : ")
             if k == '123':
                 print(f"\n{timestamp()} Student Access Granted")
-                student_menu()
+
+                while True:
+                    subject = select_subject()
+
+                    if subject == "logout":
+                        print("Logging out...\n")
+                        break
+
+                    elif subject:
+                        student_menu()
+
                 break
+
             else:
                 attempts -= 1
                 print(f"Invalid login. Attempts left: {attempts}")
@@ -321,6 +387,7 @@ while attempts > 0:
     else:
         attempts -= 1
         print(f"Invalid login. Attempts left: {attempts}")
+
 
 if attempts == 0:
     print("Too many attempts. Access locked.")
