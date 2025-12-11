@@ -1,0 +1,30 @@
+{
+    "total": 20,
+    "students": [
+        {
+            "name": "akshat",
+            "present": 9,
+            "id": 10
+        },
+        {
+            "name": "sanchay",
+            "present": 5,
+            "id": 11
+        },
+        {
+            "name": "shivansh",
+            "present": 8,
+            "id": 12
+        },
+        {
+            "name": "ishitve",
+            "present": 8,
+            "id": 13
+        },
+        {
+            "name": "anna",
+            "present": 20,
+            "id": 14
+        }
+    ]
+}

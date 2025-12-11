@@ -1,5 +1,9 @@
 import json
-import os 
+import os
+from datetime import datetime  
+
+def timestamp():                 
+   return datetime.now().strftime("[%d-%m-%Y  %I:%M:%S %p]")
 
 class Tracker:
     total = 10
@@ -11,19 +15,19 @@ class Tracker:
 
     def attend(self):
         p = round((self.present / Tracker.total) * 100)
-        print(f"\nAttendance → {self.name}: {self.present}/{Tracker.total} ({p}%)")
+        print(f"\n{timestamp()} Attendance → {self.name}: {self.present}/{Tracker.total} ({p}%)")
 
     def status(self):
         p = round((self.present / Tracker.total) * 100)
         print()
         if p >= 75:
-            print(f"{self.name} is eligible for Final ({p}%)")
+            print(f"{timestamp()} {self.name} is eligible for Final ({p}%)")
         else:
-            print(f"{self.name} is NOT eligible for Final ({p}%)")
+            print(f"{timestamp()} {self.name} is NOT eligible for Final ({p}%)")
             
     def update_attendance(self, new_p):
         self.present = new_p
-        print(f"\nAttendance updated for {self.name} to {new_p}")
+        print(f"\n{timestamp()} Attendance updated for {self.name} to {new_p}")
         
     @staticmethod
     def update_multiple_attendance():
@@ -46,7 +50,7 @@ class Tracker:
                 except ValueError:
                     print("Invalid attendance!")
 
-        print("\n[All attendance updated successfully!]\n")
+        print(f"\n{timestamp()} [All attendance updated successfully!]\n")
 
     @staticmethod
     def verify_student():
@@ -59,17 +63,17 @@ class Tracker:
         attempts = 3
         while attempts > 0:
             try:
-                sid = int(input("Enter student ID : "))
+                id = int(input("Enter student ID : "))
             except:
                 print("Invalid ID format!")
                 attempts -= 1
                 continue
 
-            if sid == students_data[name].id:
+            if id == students_data[name].id:
                 return students_data[name]
             else:
                 attempts -= 1
-                print(f"Incorrect ID! Attempts left: {attempts}")
+                print(f"\n{timestamp()} Incorrect ID! Attempts left: {attempts}")
 
         print("Too many wrong attempts - Logging out!")
         return "logout"
@@ -77,7 +81,7 @@ class Tracker:
     @classmethod
     def update_total(cls, new_total):
         cls.total = new_total
-        print(f"\nTotal working days updated → {new_total}")
+        print(f"\n{timestamp()} Total working days updated → {new_total}")
 
     @staticmethod
     def remove_student():
@@ -85,9 +89,10 @@ class Tracker:
         name = input("Enter student name to remove : ").lower()
         if name in students_data:
             del students_data[name]
-            print(f"Student '{name}' removed successfully.")
+            print(f"{timestamp()} Student '{name}' removed successfully.")
         else:
             print("Student not found.")
+
 
 
 DATA_FILE = "students_data.json"
@@ -112,19 +117,15 @@ def save_data():
 def load_data():
 
     if not os.path.exists(DATA_FILE):
-        return
+        return "empty "
 
-    try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        print("Warning: JSON file is corrupted. Starting with empty data.")
-        return
 
+    with open(DATA_FILE, "r") as f:
+        data = json.load(f)
+    
 
     if "total" in data:
         Tracker.total = data["total"]
-
 
     students_data.clear()
     for item in data.get("students", []):
@@ -138,8 +139,6 @@ def load_data():
 
 
 students_data = {}
-
-# Load data at program start  # JSON PART - NEW
 load_data()
 
 
@@ -174,23 +173,23 @@ def admin_menu():
         elif m == 3:
             new_total = int(input("Enter new total classes : "))
             Tracker.update_total(new_total)
-            save_data()   # JSON PART - NEW
+            save_data()
 
         elif m == 4:
             num = int(input("How many students to add : "))
             for _ in range(num):
                 s = Tracker()
                 students_data[s.name] = s
-            print("Students added!")
-            save_data()   # JSON PART - NEW
+            print(f"{timestamp()} Students added!")
+            save_data()
 
         elif m == 5:
             Tracker.update_multiple_attendance()
-            save_data()   # JSON PART - NEW
+            save_data()
 
         elif m == 6:
             Tracker.remove_student()
-            save_data()   # JSON PART - NEW
+            save_data()
 
         elif m == 7:
             print("\n--- STORED STUDENT DATA ---")
@@ -198,7 +197,7 @@ def admin_menu():
                 print("No students found")
             else:
                 for s in students_data.values():
-                    print(f"Name: {s.name}, ID: {s.id}, Present: {s.present}")
+                    print(f"{timestamp()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
 
         elif m == 8:
             print("Logging out as Admin!")
@@ -237,16 +236,16 @@ def teacher_menu():
         elif m == 3:
             new_total = int(input("Enter new total classes : "))
             Tracker.update_total(new_total)
-            save_data()   # JSON PART - NEW
+            save_data()
 
         elif m == 4:
             Tracker.update_multiple_attendance()
-            save_data()   # JSON PART - NEW
+            save_data()
 
         elif m == 5:
             print("\n--- STORED STUDENT DATA ---")
             for s in students_data.values():
-                print(f"Name: {s.name}, ID: {s.id}, Present: {s.present}")
+                print(f"{timestamp()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
 
         elif m == 6:
             print("Logging out as Teacher")
@@ -290,7 +289,7 @@ while attempts > 0:
         while attempts > 0:
             k = input("Enter login key : ")
             if k == '27092006':
-                print("\nAdmin Access Granted")
+                print(f"\n{timestamp()} Admin Access Granted")
                 admin_menu()
                 break
             else:
@@ -301,7 +300,7 @@ while attempts > 0:
         while attempts > 0:
             k = input("Enter login key : ")
             if k == '12345':
-                print("\nTeacher Access Granted")
+                print(f"\n{timestamp()} Teacher Access Granted")
                 teacher_menu()
                 break
             else:
@@ -312,7 +311,7 @@ while attempts > 0:
         while attempts > 0:
             k = input("Enter login key : ")
             if k == '123':
-                print("\nStudent Access Granted")
+                print(f"\n{timestamp()} Student Access Granted")
                 student_menu()
                 break
             else:
