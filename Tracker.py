@@ -94,7 +94,7 @@ class Tracker:
             print("Student not found.")
 
 students_data = {}
-DATA_FILE = ""
+DATA_FILE = None
 
 def save_data():
     global DATA_FILE
@@ -125,7 +125,6 @@ def load_data():
 
     Tracker.total = data.get("total", 10)
 
-    students_data.clear()
     for item in data.get("students", []):
         t = Tracker.__new__(Tracker)
         t.name = item["name"]
@@ -133,40 +132,37 @@ def load_data():
         t.id = item["id"]
         students_data[t.name] = t
 
-
 def select_subject():
     global DATA_FILE
 
-    choice = input('''\nSelect Subject:
+    c = input('''\nSelect Subject:
 1 - math
 2 - python
 3 - webd
 4 - logout
 - ''').lower()
 
-    if choice in ["1", "math"]:
+    if c in ["1", "math"]:
         DATA_FILE = "math_data.json"
         load_data()
         return "math"
 
-    elif choice in ["2", "python"]:
+    elif c in ["2", "python"]:
         DATA_FILE = "python_data.json"
         load_data()
         return "python"
 
-    elif choice in ["3", "webd"]:
+    elif c in ["3", "webd"]:
         DATA_FILE = "webd_data.json"
         load_data()
         return "webd"
 
-    elif choice in ["4", "logout", "exit"]:
+    elif c in ["4", "logout"]:
         return "logout"
 
     else:
         print("Invalid subject")
         return None
-
-
 def admin_menu():
     while True:
         try:
@@ -187,12 +183,14 @@ def admin_menu():
 
         if m == 1:
             s = Tracker.verify_student()
-            if s == "logout": return
+            if s == "logout": 
+                return
             if s: s.attend()
 
         elif m == 2:
             s = Tracker.verify_student()
-            if s == "logout": return
+            if s == "logout": 
+                return
             if s: s.status()
 
         elif m == 3:
@@ -231,8 +229,6 @@ def admin_menu():
 
         else:
             print("Invalid option!")
-
-
 def teacher_menu():
     while True:
         try:
@@ -275,8 +271,6 @@ def teacher_menu():
 
         elif m == 6:
             break
-
-
 def student_menu():
     while True:
         try:
@@ -302,10 +296,8 @@ def student_menu():
 
         elif m == 3:
             break
-
-
+        
 attempts = 3
-
 while attempts > 0:
     o = input("\nLogin as admin/teacher/student : ").lower()
 
