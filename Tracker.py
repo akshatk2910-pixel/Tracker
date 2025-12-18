@@ -1,375 +1,291 @@
 import json
 import os
-from datetime import datetime  
+from datetime import datetime
+import tkinter as tk
+from tkinter import messagebox, simpledialog, ttk
 
-def time():                 
-   return datetime.now().strftime("[%d-%m-%Y  %I:%M:%S %p]")
+def today():
+    return datetime.now().strftime("%d-%m-%Y")
 
-class Tracker:
-    total = 10
-
-    def __init__(self):
-        self.name = input("Enter student name : ").lower()
-        self.present = int(input("Enter days present : "))
-        self.id = int(input("Enter student ID: "))
-
-    def attend(self):
-        p = round((self.present / Tracker.total) * 100)
-        print(f"\n{time()} Attendance - {self.name}: {self.present}/{Tracker.total} ({p}%)")
-
-    def status(self):
-        p = round((self.present / Tracker.total) * 100)
-        print()
-        if p >= 75:
-            print(f"{time()} {self.name} is eligible for Final ({p}%)")
-        else:
-            print(f"{time()} {self.name} is NOT eligible for Final ({p}%)")
-            
-    def update_attendance(self, new_p):
-        self.present = new_p
-        print(f"\n{time()} Attendance updated for {self.name} to {new_p}")
-        
-    @staticmethod
-    def update_multiple_attendance():
-        print("\n--- MULTIPLE ATTENDANCE UPDATE ---")
-        try:
-            count = int(input("How many students do you want to update? : "))
-        except ValueError:
-            print("Invalid number!")
-            return
-
-        for _ in range(count):
-            print("\nUpdating next student...")
-            s = Tracker.verify_student()
-            if s == "logout":
-                return
-            if s:
-                try:
-                    new_p = int(input(f"Enter new attendance for {s.name}: "))
-                    s.update_attendance(new_p)
-                except ValueError:
-                    print("Invalid attendance!")
-
-        print(f"\n{time()} [All attendance updated successfully!]\n")
-
-    @staticmethod
-    def verify_student():
-        name = input("Enter student name : ").lower()
-
-        if name not in students_data:
-            print("Student not found.")
-            return None
-
-        attempts = 3
-        while attempts > 0:
-            try:
-                id = int(input("Enter student ID : "))
-            except:
-                print("Invalid ID format!")
-                attempts -= 1
-                continue
-
-            if id == students_data[name].id:
-                return students_data[name]
-            else:
-                attempts -= 1
-                print(f"\n{time()} Incorrect ID! Attempts left: {attempts}")
-
-        print("Too many wrong attempts - Logging out!")
-        return "logout"
-    
-    @classmethod
-    def update_total(cls, new_total):
-        cls.total = new_total
-        print(f"\n{time()} Total working days updated - {new_total}")
-
-    @staticmethod
-    def remove_student():
-        print()
-        name = input("Enter student name to remove : ").lower()
-        if name in students_data:
-            del students_data[name]
-            print(f"{time()} Student '{name}' removed successfully.")
-        else:
-            print("Student not found.")
+SUBJECT_KEYS = {
+    "math": "MATH123",
+    "python": "PY123",
+    "webd": "WEB123"
+}
 
 students_data = {}
 DATA_FILE = None
+TOTAL = 10
+
+class Student:
+    def __init__(self, name, sid, present, history=None):
+        self.name = name.lower()
+        self.id = sid
+        self.present = present
+        self.history = history if history else []
+
+    def percent(self):
+        return round((self.present / TOTAL) * 100) if TOTAL else 0
+
+    def eligible(self):
+        return self.percent() >= 75
+
+    def add_history(self, value):
+        self.history.append({"date": today(), "present": value})
 
 def save_data():
-    global DATA_FILE
-
-    data = {
-        "total": Tracker.total,
-        "students": []
-    }
+    data = {"total": TOTAL, "students": []}
     for s in students_data.values():
         data["students"].append({
             "name": s.name,
+            "id": s.id,
             "present": s.present,
-            "id": s.id
+            "history": s.history
         })
-
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-
 def load_data():
-    global DATA_FILE, students_data
-
+    global TOTAL
+    students_data.clear()
     if not os.path.exists(DATA_FILE):
-        return "No Data file"
-
+        return
     with open(DATA_FILE, "r") as f:
         data = json.load(f)
+    TOTAL = data.get("total", 10)
+    for i in data.get("students", []):
+        students_data[i["name"]] = Student(
+            i["name"], i["id"], i["present"], i.get("history", [])
+        )
 
-    Tracker.total = data.get("total", 10)
-
-    for item in data.get("students", []):
-        t = Tracker.__new__(Tracker)
-        t.name = item["name"]
-        t.present = item["present"]
-        t.id = item["id"]
-        students_data[t.name] = t
-
-def select_subject():
-    global DATA_FILE
-
-    c = input('''\nSelect Subject:
-1 - math
-2 - python
-3 - webd
-4 - logout
-- ''').lower()
-
-    if c in ["1", "math"]:
-        DATA_FILE = "math_data.json"
-        load_data()
-        return "math"
-
-    elif c in ["2", "python"]:
-        DATA_FILE = "python_data.json"
-        load_data()
-        return "python"
-
-    elif c in ["3", "webd"]:
-        DATA_FILE = "webd_data.json"
-        load_data()
-        return "webd"
-
-    elif c in ["4", "logout"]:
-        return "logout"
-
-    else:
-        print("Invalid subject")
+def get_student(name, sid):
+    name = name.lower().strip()
+    if name not in students_data:
+        messagebox.showerror("Error", "Student not found")
         return None
-def admin_menu():
-    while True:
-        try:
-            m = int(input('''
---- ADMIN MENU ---
-1 - Check Attendance
-2 - Check Eligibility
-3 - Update Total Classes
-4 - Add Students
-5 - Update Attendance 
-6 - Remove Student
-7 - Show Student Data
-8 - Quit (Back to Subject Select)
-- '''))
-        except ValueError:
-            print("Enter a valid number!")
-            continue
+    if students_data[name].id != sid:
+        messagebox.showerror("Access Denied", "Incorrect Student ID")
+        return None
+    return students_data[name]
 
-        if m == 1:
-            s = Tracker.verify_student()
-            if s == "logout": 
-                return
-            if s: s.attend()
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Student Attendance System")
+        self.geometry("550x650")
+        self.resizable(False, False)
+        self.role = None
+        self.frames = {}
+        for F in (LoginPage, SubjectPage, TeacherKeyPage,
+                  AdminPage, TeacherPage, StudentPage):
+            frame = F(self)
+            self.frames[F] = frame
+            frame.place(relwidth=1, relheight=1)
+        self.show(LoginPage)
 
-        elif m == 2:
-            s = Tracker.verify_student()
-            if s == "logout": 
-                return
-            if s: s.status()
+    def show(self, page):
+        self.frames[page].tkraise()
 
-        elif m == 3:
-            new_total = int(input("Enter new total classes : "))
-            Tracker.update_total(new_total)
-            save_data()
+class LoginPage(tk.Frame):
+    def __init__(self, root):
+        super().__init__(root)
+        tk.Label(self, text="Login", font=("Arial", 18, "bold")).pack(pady=20)
+        self.role_box = ttk.Combobox(
+            self, values=["admin", "teacher", "student"], state="readonly"
+        )
+        self.role_box.pack()
+        self.role_box.set("admin")
+        self.key = tk.Entry(self, show="*")
+        self.key.pack(pady=10)
+        tk.Button(self, text="Login", command=self.login).pack(pady=20)
 
-        elif m == 4:
-            num = int(input("How many students to add : "))
-            print()
-            for _ in range(num):
-                s = Tracker()
-                students_data[s.name] = s
-                print()
-            print(f"{time()} Students added!")
-            save_data()
-
-        elif m == 5:
-            Tracker.update_multiple_attendance()
-            save_data()
-
-        elif m == 6:
-            Tracker.remove_student()
-            save_data()
-
-        elif m == 7:
-            print("\n--- STORED STUDENT DATA ---")
-            if len(students_data) == 0:
-                print("No students found")
+    def login(self):
+        r = self.role_box.get()
+        k = self.key.get()
+        if (r == "admin" and k == "12345") or \
+           (r == "teacher" and k == "1234") or \
+           (r == "student" and k == "123"):
+            self.master.role = r
+            if r == "teacher":
+                self.master.show(TeacherKeyPage)
             else:
-                for s in students_data.values():
-                    print(f"{time()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
-
-        elif m == 8:
-            break
-
+                self.master.show(SubjectPage)
         else:
-            print("Invalid option!")
-def teacher_menu():
-    while True:
+            messagebox.showerror("Error", "Invalid Login Key")
+
+class SubjectPage(tk.Frame):
+    def __init__(self, root):
+        super().__init__(root)
+        tk.Label(self, text="Select Subject", font=("Arial", 16, "bold")).pack(pady=20)
+        for s in ("math", "python", "webd"):
+            tk.Button(self, text=s.title(), width=20,
+                      command=lambda x=s: self.select(x)).pack(pady=5)
+        tk.Button(self, text="Logout",
+                  command=lambda: root.show(LoginPage)).pack(pady=20)
+
+    def select(self, subject):
+        global DATA_FILE
+        DATA_FILE = f"{subject}_data.json"
+        load_data()
+        if self.master.role == "admin":
+            self.master.show(AdminPage)
+        else:
+            self.master.show(StudentPage)
+
+class TeacherKeyPage(tk.Frame):
+    def __init__(self, root):
+        super().__init__(root)
+        tk.Label(self, text="Enter Subject Key", font=("Arial", 16, "bold")).pack(pady=20)
+        self.entry = tk.Entry(self, show="*")
+        self.entry.pack(pady=10)
+        tk.Button(self, text="Submit", command=self.verify).pack(pady=10)
+        tk.Button(self, text="Logout",
+                  command=lambda: root.show(LoginPage)).pack(pady=10)
+
+    def verify(self):
+        if self.entry.get() in SUBJECT_KEYS.values():
+            self.master.show(TeacherPage)
+        else:
+            messagebox.showerror("Error", "Invalid Subject Key")
+
+class BaseMenu(tk.Frame):
+    def create_inputs(self):
+        tk.Label(self, text="Student Name").pack()
+        self.name_entry = tk.Entry(self)
+        self.name_entry.pack()
+        tk.Label(self, text="Student ID").pack()
+        self.id_entry = tk.Entry(self)
+        self.id_entry.pack(pady=5)
+
+    def get_student_obj(self):
         try:
-            m = int(input('''
---- TEACHER MENU ---
-1 - Check Attendance
-2 - Check Eligibility
-3 - Update Total Classes
-4 - Update Attendance
-5 - Show Student Data
-6 - Quit (Back to Subject Select)
-- '''))
+            sid = int(self.id_entry.get())
         except ValueError:
-            print("Enter a valid number!")
-            continue
+            messagebox.showerror("Error", "Invalid ID")
+            return None
+        return get_student(self.name_entry.get(), sid)
 
-        if m == 1:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s: s.attend()
+    def logout(self):
+        self.master.show(LoginPage)
 
-        elif m == 2:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s: s.status()
+    def switch_subject(self):
+        self.master.show(SubjectPage)
 
-        elif m == 3:
-            new_total = int(input("Enter new total classes : "))
-            Tracker.update_total(new_total)
+class AdminPage(BaseMenu):
+    def __init__(self, root):
+        super().__init__(root)
+        tk.Label(self, text="Admin Panel", font=("Arial", 16, "bold")).pack(pady=10)
+        self.create_inputs()
+        tk.Button(self, text="Check Attendance", command=self.attend).pack()
+        tk.Button(self, text="Check Eligibility", command=self.status).pack()
+        tk.Button(self, text="Update Attendance", command=self.update).pack()
+        tk.Button(self, text="Class Attendance Update",
+                  command=self.class_attendance_update).pack()
+        tk.Button(self, text="Update Total Classes", command=self.update_total).pack()
+        tk.Button(self, text="Show Student Data", command=self.show_all).pack()
+        tk.Button(self, text="Remove Student", command=self.remove).pack()
+        tk.Button(self, text="Add Student", command=self.add).pack()
+        tk.Button(self, text="Switch Subject", command=self.switch_subject).pack()
+        tk.Button(self, text="Logout", command=self.logout).pack(pady=10)
+
+    def class_attendance_update(self):
+        win = tk.Toplevel(self)
+        win.title("Class Attendance Update")
+        canvas = tk.Canvas(win)
+        scrollbar = tk.Scrollbar(win, command=canvas.yview)
+        frame = tk.Frame(canvas)
+        frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        vars = {}
+        for s in students_data.values():
+            v = tk.StringVar(value="absent")
+            vars[s.name] = v
+            tk.Label(frame, text=f"{s.name} ({s.id})").pack()
+            tk.Radiobutton(frame, text="Present", variable=v, value="present").pack()
+            tk.Radiobutton(frame, text="Absent", variable=v, value="absent").pack()
+
+        def save():
+            for n, v in vars.items():
+                if v.get() == "present":
+                    students_data[n].present += 1
+            save_data()
+            win.destroy()
+
+        tk.Button(win, text="Save", command=save).pack()
+        tk.Button(win, text="Back", command=win.destroy).pack()
+
+    def show_all(self):
+        msg = "\n".join(f"{s.name} | {s.id} | {s.present}/{TOTAL}" for s in students_data.values())
+        messagebox.showinfo("Students", msg or "No students")
+
+    def attend(self):
+        s = self.get_student_obj()
+        if s:
+            messagebox.showinfo("Attendance", f"{s.name}: {s.present}/{TOTAL}")
+
+    def status(self):
+        s = self.get_student_obj()
+        if s:
+            messagebox.showinfo("Eligibility", "ELIGIBLE" if s.eligible() else "NOT ELIGIBLE")
+
+    def update(self):
+        s = self.get_student_obj()
+        if s:
+            n = simpledialog.askinteger("Update", "Enter present days")
+            if n is not None:
+                s.present = n
+                save_data()
+
+    def update_total(self):
+        global TOTAL
+        t = simpledialog.askinteger("Update Total", "Enter total classes")
+        if t:
+            TOTAL = t
             save_data()
 
-        elif m == 4:
-            Tracker.update_multiple_attendance()
+    def remove(self):
+        s = self.get_student_obj()
+        if s:
+            del students_data[s.name]
             save_data()
 
-        elif m == 5:
-            print("\n--- STORED STUDENT DATA ---")
-            for s in students_data.values():
-                print(f"{time()} Name: {s.name}, ID: {s.id}, Present: {s.present}")
+    def add(self):
+        win = tk.Toplevel(self)
+        n = tk.Entry(win); n.pack()
+        i = tk.Entry(win); i.pack()
+        p = tk.Entry(win); p.pack()
+        tk.Button(win, text="Save",
+                  command=lambda: (students_data.setdefault(
+                      n.get().lower(), Student(n.get(), int(i.get()), int(p.get()))),
+                      save_data(), win.destroy())).pack()
 
-        elif m == 6:
-            break
-def student_menu():
-    while True:
-        try:
-            m = int(input('''
---- STUDENT MENU ---
-1 - Check Attendance
-2 - Check Eligibility
-3 - Quit (Back to Subject Select)
-- '''))
-        except ValueError:
-            print("Enter a valid number")
-            continue
+class TeacherPage(AdminPage):
+    def switch_subject(self):
+        self.master.show(TeacherKeyPage)
 
-        if m == 1:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s: s.attend()
+class StudentPage(BaseMenu):
+    def __init__(self, root):
+        super().__init__(root)
+        tk.Label(self, text="Student Panel", font=("Arial", 16, "bold")).pack(pady=10)
+        self.create_inputs()
+        tk.Button(self, text="View Attendance", command=self.attend).pack()
+        tk.Button(self, text="Check Eligibility", command=self.status).pack()
+        tk.Button(self, text="Switch Subject", command=self.switch_subject).pack()
+        tk.Button(self, text="Logout", command=self.logout).pack(pady=10)
 
-        elif m == 2:
-            s = Tracker.verify_student()
-            if s == "logout": return
-            if s: s.status()
+    def attend(self):
+        s = self.get_student_obj()
+        if s:
+            messagebox.showinfo("Attendance", f"{s.name}: {s.present}/{TOTAL}")
 
-        elif m == 3:
-            break
-        
-attempts = 3
-while attempts > 0:
-    o = input("\nLogin as admin/teacher/student : ").lower()
+    def status(self):
+        s = self.get_student_obj()
+        if s:
+            messagebox.showinfo("Eligibility", "ELIGIBLE" if s.eligible() else "NOT ELIGIBLE")
 
-    if o == "admin":
-        while attempts > 0:
-            k = input("Enter login key : ")
-            if k == '12345':
-                print(f"\n{time()} Admin Access Granted")
-
-                while True:
-                    subject = select_subject()
-
-                    if subject == "logout":
-                        print("Logging out...\n")
-                        break
-
-                    elif subject:
-                        admin_menu()
-
-                break
-
-            else:
-                attempts -= 1
-                print(f"Invalid login. Attempts left: {attempts}")
-
-    elif o == "teacher":
-        while attempts > 0:
-            k = input("Enter login key : ")
-            if k == '1234':
-                print(f"\n{time()} Teacher Access Granted")
-
-                while True:
-                    subject = select_subject()
-
-                    if subject == "logout":
-                        print("Logging out...\n")
-                        break
-
-                    elif subject:
-                        teacher_menu()
-
-                break
-
-            else:
-                attempts -= 1
-                print(f"Invalid login. Attempts left: {attempts}")
-
-    elif o == "student":
-        while attempts > 0:
-            k = input("Enter login key : ")
-            if k == '123':
-                print(f"\n{time()} Student Access Granted")
-
-                while True:
-                    subject = select_subject()
-
-                    if subject == "logout":
-                        print("Logging out...\n")
-                        break
-
-                    elif subject:
-                        student_menu()
-
-                break
-
-            else:
-                attempts -= 1
-                print(f"Invalid login. Attempts left: {attempts}")
-
-    else:
-        attempts -= 1
-        print(f"Invalid login. Attempts left: {attempts}")
-
-if attempts == 0:
-    print("Too many attempts. Access locked.")
+if __name__ == "__main__":
+    App().mainloop()
