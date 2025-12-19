@@ -183,8 +183,13 @@ class AdminPage(BaseMenu):
                   command=self.class_attendance_update).pack()
         tk.Button(self, text="Update Total Classes", command=self.update_total).pack()
         tk.Button(self, text="Show Student Data", command=self.show_all).pack()
-        tk.Button(self, text="Remove Student", command=self.remove).pack()
-        tk.Button(self, text="Add Student", command=self.add).pack()
+
+        self.remove_btn = tk.Button(self, text="Remove Student", command=self.remove)
+        self.remove_btn.pack()
+
+        self.add_btn = tk.Button(self, text="Add Student", command=self.add)
+        self.add_btn.pack()
+
         tk.Button(self, text="Switch Subject", command=self.switch_subject).pack()
         tk.Button(self, text="Logout", command=self.logout).pack(pady=10)
 
@@ -264,6 +269,11 @@ class AdminPage(BaseMenu):
                       save_data(), win.destroy())).pack()
 
 class TeacherPage(AdminPage):
+    def __init__(self, root):
+        super().__init__(root)
+        self.add_btn.pack_forget()
+        self.remove_btn.pack_forget()
+
     def switch_subject(self):
         self.master.show(TeacherKeyPage)
 
